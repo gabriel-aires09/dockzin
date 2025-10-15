@@ -37,7 +37,41 @@ struct child_config {
 // syscalls
 // resources
 // child
-// choose-hostname
+
+
+
+/*
+ * choose_hostname
+ * Gera automaticamente o nome do host de forma aleatória, inspirada em cartas de tarô
+ */
+int choose_hostname(char *buff, size_t len){
+  static const char *suits[] = { "swords", "wands", "pentacles", "cups"};
+  static const char *minor[] = {
+    "ace", "two", "three", "four", "five", "six", "seven", "eight",
+    "nine", "ten", "page", "knight", "queen", "king"
+  };
+  static const char *major[] = {
+    "fool", "magician", "high-priestess", "empress", "emperor",
+    "hierophant", "lovers", "chariot", "strength", "hermit",
+    "wheel", "justice", "hanged-man", "death", "temperance",
+    "devil", "tower", "star", "moon", "sun", "judgment", "world"
+  };
+  struct timepesc now = {0};
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  size_t ix = now.tv_nsec % 78;
+  if (ix < sizeof(major) / sizeof(*major)){
+    snprintf(buff, len, "%051x-%s", now.tv_sec, major[ix]);
+  } else {
+    ix -= sizeof(major) / sizeof(*major);
+    snprintf(buff, len,
+        "%051xc-%s-of-%s",
+        now.tv_sec,
+        minor[ix % (sizeof(minor) / sizeof(*minor))],
+        suits[ix / (sizeof(minor) / sizeof(*minor))]
+    );
+  }
+  return 0;
+} 
 
 /*
  * argc - quantidade de argumentos passados via terminal
@@ -73,7 +107,6 @@ int main (int argc, char **argv){
     last_optind = optind;
   }
 
-  // garante
   finish_options:
     if (!config.argc) goto usage; // comando -c foi informado
     if (!config.mount_dir) goto usage; // diretorio de montagem especificado
@@ -95,7 +128,6 @@ int main (int argc, char **argv){
   int major = -1;
   int minor = -1;
 
-  
   // imprime uma mensagem 
   fprintf(stderr, "=> validating Linux version...");
   struct utsname host = {0};
@@ -106,7 +138,6 @@ int main (int argc, char **argv){
   int major = -1;
   int minor = -1;
 
-  
   // imprime uma mensagem de erro, avisando que está validando a versão do linux
   if (sscanf(host.release, "%u.%u.", &major, &minor) != 2) {
     fprintf(stderr, "weird release format: %s\n", host.release);
